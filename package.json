@@ -1,0 +1,12 @@
+{
+  "name": "examination-villa-vr",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A-Frame luxury villa — generate PDF documentation",
+  "scripts": {
+    "doc-pdf": "node gen-pdf.js"
+  },
+  "dependencies": {
+    "pdfkit": "^0.15.0"
+  }
+}

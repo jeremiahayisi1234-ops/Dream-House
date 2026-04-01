@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luxury Villa VR — Examination</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="js/water-shader.js"></script>
+  <script src="js/pool-orbit.js"></script>
+  <script src="js/scene-helpers.js"></script>
+  <script src="js/procedural-textures.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #vr-hint {
+      position: fixed; bottom: 12px; left: 12px; z-index: 10;
+      background: rgba(0,0,0,.55); color: #eee; padding: 8px 12px; border-radius: 8px;
+      font-size: 13px; max-width: 320px; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="vr-hint">WASD / arrows: move · Mouse / touch: look · Click scene then VR for headset</div>
+
+  <a-scene
+    renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true; sortObjects: true"
+    shadow="type: pcfsoft"
+    vr-mode-ui="enabled: true"
+    embedded="false"
+    loading-screen="dotsColor: #b8860b; backgroundColor: #1a1a2e">
+
+    <a-entity apply-procedural-textures></a-entity>
+
+    <!-- Global lighting -->
+    <a-entity light="type: ambient; color: #cfd8dc; intensity: 0.42"></a-entity>
+    <a-entity id="sun" light="type: directional; color: #fff8e1; intensity: 0.85; castShadow: true"
+      position="8 18 -6"
+      shadow="mapSize: 2048 2048; cameraFar: 80; cameraNear: 0.5; bias: -0.0003"></a-entity>
+
+    <!-- Point lights per zone (interior + pool deck) -->
+    <a-entity light="type: point; color: #ffe0b2; intensity: 0.55; distance: 14; decay: 2" position="-6 2.4 3.5" shadow="cast: false"></a-entity>
+    <a-entity light="type: point; color: #fff3e0; intensity: 0.5; distance: 14; decay: 2" position="0 2.4 3.5"></a-entity>
+    <a-entity light="type: point; color: #ffe0b2; intensity: 0.55; distance: 14; decay: 2" position="6 2.4 3.5"></a-entity>
+    <a-entity light="type: point; color: #e3f2fd; intensity: 0.45; distance: 12; decay: 2" position="-6 2.4 -3.5"></a-entity>
+    <a-entity light="type: point; color: #fce4ec; intensity: 0.45; distance: 12; decay: 2" position="0 2.4 -3.5"></a-entity>
+    <a-entity light="type: point; color: #e8f5e9; intensity: 0.45; distance: 12; decay: 2" position="6 2.4 -3.5"></a-entity>
+    <a-entity light="type: point; color: #b3e5fc; intensity: 0.35; distance: 20; decay: 2" position="0 3.5 12"></a-entity>
+
+    <!-- Sky & environment -->
+    <a-sky color="#87ceeb" material="shader: flat"></a-sky>
+    <a-entity id="ground" geometry="primitive: plane; width: 120; height: 120" rotation="-90 0 0"
+      position="0 -0.02 8" material="color: #3d6b47; roughness: 0.95; metalness: 0" shadow="receive: true"></a-entity>
+
+    <!-- Stone pathway to entrance -->
+    <a-entity id="path-main" position="0 0.01 -12">
+      <a-box width="3" height="0.04" depth="18" color="#9e9e9e" roughness="0.85" shadow="receive: true"></a-box>
+    </a-entity>
+    <a-entity position="-4 0.01 10">
+      <a-box width="2.2" height="0.04" depth="10" rotation="0 25 0" color="#8d8d8d" shadow="receive: true"></a-box>
+    </a-entity>
+    <a-entity position="4 0.01 10">
+      <a-box width="2.2" height="0.04" depth="10" rotation="0 -25 0" color="#8d8d8d" shadow="receive: true"></a-box>
+    </a-entity>
+
+    <!-- Swimming pool deck -->
+    <a-entity id="pool-group" position="0 0 12">
+      <a-box id="pool-deck" width="14" height="0.15" depth="8" position="0 -0.05 0" color="#cfd8dc" shadow="receive: true"></a-box>
+      <a-box width="14.4" height="0.5" depth="0.35" position="0 0.2 4" color="#eceff1" shadow="cast: true; receive: true"></a-box>
+      <a-box width="14.4" height="0.5" depth="0.35" position="0 0.2 -4" color="#eceff1" shadow="cast: true; receive: true"></a-box>
+      <a-box width="0.35" height="0.5" depth="8.4" position="7 0.2 0" color="#eceff1" shadow="cast: true; receive: true"></a-box>
+      <a-box width="0.35" height="0.5" depth="8.4" position="-7 0.2 0" color="#eceff1" shadow="cast: true; receive: true"></a-box>
+      <!-- Water (high segment count for smooth waves) -->
+      <a-entity id="water-surface"
+        geometry="primitive: plane; width: 12.5; height: 6.5; segmentsWidth: 96; segmentsHeight: 96"
+        rotation="-90 0 0"
+        position="0 0.12 0"
+        luxury-water="color: #0d8aa8; deepColor: #023047; speed: 1.15; waveScale: 0.1"
+        shadow="cast: false; receive: true"></a-entity>
+      <a-box width="12.5" height="0.9" depth="6.5" position="0 -0.55 0" color="#0277bd" material="opacity: 0.85; transparent: true" shadow="receive: true"></a-box>
+    </a-entity>
+
+    <!-- Nine trees: 3 types × 3 (pine, round, palm) -->
+    <a-entity id="trees" position="0 0 0">
+      <a-entity position="-11 0 6" scale="1.1 1.1 1.1" data-tree="pine"></a-entity>
+      <a-entity position="-13 0 14" scale="0.95 0.95 0.95" data-tree="pine"></a-entity>
+      <a-entity position="-9 0 18" scale="1.05 1.05 1.05" data-tree="pine"></a-entity>
+      <a-entity position="11 0 5" scale="1 1 1" data-tree="round"></a-entity>
+      <a-entity position="13 0 13" scale="1.15 1.15 1.15" data-tree="round"></a-entity>
+      <a-entity position="10 0 19" scale="0.9 0.9 0.9" data-tree="round"></a-entity>
+      <a-entity position="-14 0 0" scale="0.85 0.85 0.85" data-tree="palm"></a-entity>
+      <a-entity position="14 0 2" scale="0.9 0.9 0.9" data-tree="palm"></a-entity>
+      <a-entity position="-12 0 -6" scale="0.88 0.88 0.88" data-tree="palm"></a-entity>
+    </a-entity>
+
+    <!-- Animated kids + dog near pool -->
+    <a-entity id="kid-a" pool-orbit="center: 0 0 12; radius: 3.6; speed: 0.42; phase: 0; height: 0">
+      <a-cylinder position="0 0.65 0" height="1.25" radius="0.28" color="#ffb74d" shadow="cast: true"></a-cylinder>
+      <a-sphere position="0 1.42 0" radius="0.24" color="#ffcc80" shadow="cast: true"></a-sphere>
+      <a-box position="0.35 0.9 0" width="0.5" height="0.12" depth="0.12" color="#5c6bc0" shadow="cast: true"></a-box>
+    </a-entity>
+    <a-entity id="kid-b" pool-orbit="center: 0 0 12; radius: 2.8; speed: -0.5; phase: 2.1; height: 0">
+      <a-cylinder position="0 0.55 0" height="1.1" radius="0.26" color="#81c784" shadow="cast: true"></a-cylinder>
+      <a-sphere position="0 1.28 0" radius="0.22" color="#c8e6c9" shadow="cast: true"></a-sphere>
+      <a-box position="-0.3 0.85 0" width="0.45" height="0.1" depth="0.1" color="#ef5350" shadow="cast: true"></a-box>
+    </a-entity>
+    <a-entity id="dog" pool-zigzag="center: 2 0 11.8; width: 2.8; depth: 2.2; speed: 0.55; height: 0">
+      <a-box position="0 0.22 0" width="0.75" height="0.35" depth="0.4" color="#795548" shadow="cast: true"></a-box>
+      <a-box position="0.42 0.32 0" width="0.22" height="0.22" depth="0.22" color="#6d4c41" shadow="cast: true"></a-box>
+      <a-box position="-0.45 0.1 0.12" width="0.12" height="0.08" depth="0.25" color="#5d4037" shadow="cast: true"></a-box>
+      <a-box position="-0.45 0.1 -0.12" width="0.12" height="0.08" depth="0.25" color="#5d4037" shadow="cast: true"></a-box>
+    </a-entity>
+
+    <!-- Villa shell -->
+    <a-entity id="villa" position="0 0 0">
+      <!-- Foundation -->
+      <a-box width="20.2" height="0.2" depth="14.2" position="0 0.1 0" color="#78909c" shadow="receive: true"></a-box>
+
+      <!-- Floors (six rooms) — wood tones -->
+      <a-entity id="floors">
+        <a-box position="-6.5 0.12 3.5" width="6.8" height="0.06" depth="6.8" color="#6d4c41" shadow="receive: true"></a-box>
+        <a-box position="0 0.12 3.5" width="5.8" height="0.06" depth="6.8" color="#5d4037" shadow="receive: true"></a-box>
+        <a-box position="6.5 0.12 3.5" width="6.8" height="0.06" depth="6.8" color="#6d4c41" shadow="receive: true"></a-box>
+        <a-box position="-6.5 0.12 -3.5" width="6.8" height="0.06" depth="6.8" color="#4e342e" shadow="receive: true"></a-box>
+        <a-box position="0 0.12 -3.5" width="5.8" height="0.06" depth="6.8" color="#5d4037" shadow="receive: true"></a-box>
+        <a-box position="6.5 0.12 -3.5" width="6.8" height="0.06" depth="6.8" color="#4e342e" shadow="receive: true"></a-box>
+      </a-entity>
+
+      <!-- Area rugs -->
+      <a-entity id="rugs">
+        <a-plane position="-6.5 0.16 3.5" rotation="-90 0 0" width="3.6" height="2.4" color="#5d4037" material="opacity: 0.95; roughness: 0.9"></a-plane>
+        <a-plane position="-6.5 0.16 -3.5" rotation="-90 0 15" width="4" height="2.8" color="#37474f" material="opacity: 0.92; roughness: 0.9"></a-plane>
+        <a-plane position="0 0.16 3.5" rotation="-90 0 0" width="2.8" height="4" color="#eceff1" material="opacity: 0.88; roughness: 0.85"></a-plane>
+        <a-plane position="6.5 0.16 3.5" rotation="-90 0 0" width="3.2" height="2.2" color="#8d6e63" material="opacity: 0.9; roughness: 0.9"></a-plane>
+        <a-plane position="0 0.16 -3.5" rotation="-90 0 0" width="3.4" height="2.6" color="#b0bec5" material="opacity: 0.9; roughness: 0.88"></a-plane>
+        <a-plane position="6.5 0.16 -3.5" rotation="-90 0 0" width="3.2" height="2.6" color="#90a4ae" material="opacity: 0.9; roughness: 0.88"></a-plane>
+      </a-entity>
+
+      <!-- Exterior & partition walls (y center at 1.5) -->
+      <a-entity id="walls">
+        <a-box position="0 1.5 -7" width="20" height="3" depth="0.2" color="#efebe9" shadow="cast: true; receive: true"></a-box>
+        <a-box position="0 1.5 7" width="20" height="3" depth="0.2" color="#efebe9" shadow="cast: true; receive: true"></a-box>
+        <a-box position="-10 1.5 0" width="0.2" height="3" depth="14" color="#efebe9" shadow="cast: true; receive: true"></a-box>
+        <a-box position="10 1.5 0" width="0.2" height="3" depth="14" color="#efebe9" shadow="cast: true; receive: true"></a-box>
+        <a-box position="-3 1.5 0" width="0.12" height="3" depth="14" color="#d7ccc8" shadow="cast: true; receive: true"></a-box>
+        <a-box position="3 1.5 0" width="0.12" height="3" depth="14" color="#d7ccc8" shadow="cast: true; receive: true"></a-box>
+        <a-box position="0 1.5 0" width="20" height="3" depth="0.12" color="#d7ccc8" shadow="cast: true; receive: true"></a-box>
+      </a-entity>
+
+      <!-- Ceiling -->
+      <a-box position="0 3.05 0" width="19.6" height="0.1" depth="13.6" color="#fafafa" shadow="receive: true"></a-box>
+
+      <!-- Windows (glass strips) -->
+      <a-entity id="windows">
+        <a-plane position="-9.92 1.6 3.5" width="2.2" height="1.6" color="#81d4fa" material="opacity: 0.35; transparent: true; side: double"></a-plane>
+        <a-plane position="9.92 1.6 -2" width="2.4" height="1.6" color="#81d4fa" material="opacity: 0.35; transparent: true; side: double" rotation="0 180 0"></a-plane>
+        <a-plane position="6.5 1.6 6.92" width="3" height="1.4" color="#b3e5fc" material="opacity: 0.32; transparent: true; side: double" rotation="0 0 0"></a-plane>
+        <a-plane position="-6.5 1.6 6.92" width="3" height="1.4" color="#b3e5fc" material="opacity: 0.32; transparent: true; side: double"></a-plane>
+      </a-entity>
+
+      <!-- ========== LIVING ROOM 1 ========== -->
+      <a-entity id="living-1" position="-6.5 0 3.5">
+        <a-box position="0 0.55 -2.8" width="3.2" height="0.45" depth="0.95" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="-1.1 0.55 -2.8" width="1.2" height="0.45" depth="0.95" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="1.1 0.55 -2.8" width="1.2" height="0.45" depth="0.95" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0 0.35 0.2" width="2.2" height="0.3" depth="1" color="#3e2723" shadow="cast: true"></a-box>
+        <a-box position="0 0.75 -2.2" width="2.8" height="1.1" depth="0.08" color="#263238" shadow="cast: false"></a-box>
+        <a-cylinder position="2.5 0.9 1.2" height="1.8" radius="0.06" color="#ffd54f" shadow="cast: true"></a-cylinder>
+        <a-cylinder position="2.35 1.75 1.2" radius="0.35" height="0.08" color="#fff9c4" shadow="cast: true"></a-cylinder>
+        <a-box position="-2.62 1.4 -1" width="0.06" height="1.05" depth="1.35" color="#eceff1" shadow="cast: true"></a-box>
+        <a-plane position="-2.65 1.4 -1" rotation="0 90 0" width="1.15" height="0.75" color="#90a4ae" shadow="cast: true"></a-plane>
+        <a-entity position="2.2 0 2">
+          <a-cylinder height="0.45" radius="0.35" color="#8d6e63" shadow="cast: true"></a-cylinder>
+          <a-entity position="0 0.55 0" geometry="primitive: sphere; radius: 0.5" material="color: #2e7d32" shadow="cast: true"></a-entity>
+        </a-entity>
+        <a-box position="-1.8 1.2 2.9" width="1.6" height="0.9" depth="0.06" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="-1.8 1.65 2.9" width="1.2" height="0.45" depth="0.06" color="#eceff1" shadow="cast: true"></a-box>
+      </a-entity>
+
+      <!-- ========== KITCHEN ========== -->
+      <a-entity id="kitchen" position="0 0 3.5">
+        <a-box position="-1.8 0.5 -2.9" width="2.2" height="0.55" depth="0.55" color="#cfd8dc" shadow="cast: true"></a-box>
+        <a-box position="0 0.5 -2.9" width="1.8" height="0.55" depth="0.55" color="#b0bec5" shadow="cast: true"></a-box>
+        <a-box position="1.9 1.1 -2.9" width="0.7" height="1.6" depth="0.65" color="#eceff1" shadow="cast: true"></a-box>
+        <a-box position="-1.8 1.05 -2.9" width="0.55" height="0.12" depth="0.45" color="#37474f" shadow="cast: true"></a-box>
+        <a-box position="2.5 0.4 0.5" width="0.55" height="0.8" depth="1.2" color="#78909c" shadow="cast: true"></a-box>
+        <a-cylinder position="2.5 0.95 0.5" height="0.05" radius="0.35" color="#424242" shadow="cast: true"></a-cylinder>
+        <a-entity position="0 2.6 -1" light="type: point; intensity: 0.4; distance: 6; color: #fff8e1"></a-entity>
+        <a-box position="-2.4 2.2 -2.5" width="0.9" height="0.35" depth="0.35" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box position="0 2.2 -2.5" width="0.9" height="0.35" depth="0.35" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box position="2.2 2.2 -2.5" width="0.9" height="0.35" depth="0.35" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box id="kitchen-island" position="1.2 0.85 2.2" width="1.4" height="0.9" depth="0.45" color="#a1887f" shadow="cast: true"></a-box>
+        <a-box position="1.2 1.35 2.2" width="1.2" height="0.08" depth="0.35" color="#eceff1" shadow="cast: true"></a-box>
+      </a-entity>
+
+      <!-- ========== DINING ========== -->
+      <a-entity id="dining" position="6.5 0 3.5">
+        <a-box position="0 0.38 0" width="2.6" height="0.32" depth="1.3" color="#4e342e" shadow="cast: true"></a-box>
+        <a-box position="-0.9 0.65 0.55" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0.9 0.65 0.55" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="-0.9 0.65 -0.55" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0.9 0.65 -0.55" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0 0.65 -0.9" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0 0.65 0.9" width="0.35" height="0.75" depth="0.35" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-entity position="0 2.5 0" light="type: point; intensity: 0.55; distance: 8; color: #fffde7"></a-entity>
+        <a-entity position="0 2.35 0">
+          <a-cylinder height="0.25" radius="0.45" color="#ffd54f" shadow="cast: true"></a-cylinder>
+          <a-cone position="0 -0.15 0" height="0.5" radius-bottom="0.5" radius-top="0.1" color="#fff8e1" shadow="cast: true"></a-cone>
+        </a-entity>
+        <a-box position="-2.4 0.9 -2.5" width="0.45" height="1.2" depth="0.35" color="#5d4037" shadow="cast: true"></a-box>
+        <a-plane position="-2.42 1.4 -2.5" rotation="0 90 0" width="0.35" height="0.5" color="#90a4ae" shadow="cast: true"></a-plane>
+        <a-box position="2.5 0.45 2.4" width="0.35" height="0.55" depth="0.35" color="#ffab91" shadow="cast: true"></a-box>
+        <a-entity position="2.5 0.85 2.4" geometry="primitive: sphere; radius: 0.12" material="color: #ef5350" shadow="cast: true"></a-entity>
+      </a-entity>
+
+      <!-- ========== LIVING ROOM 2 ========== -->
+      <a-entity id="living-2" position="-6.5 0 -3.5">
+        <a-box position="0 0.45 2.4" width="2.8" height="0.4" depth="0.9" color="#455a64" shadow="cast: true"></a-box>
+        <a-box position="-1.2 0.4 0" width="1" height="0.4" depth="1" color="#546e7a" shadow="cast: true"></a-box>
+        <a-box position="1.2 0.4 0" width="1" height="0.4" depth="1" color="#546e7a" shadow="cast: true"></a-box>
+        <a-box position="0 0.35 -1.8" width="1.6" height="0.3" depth="0.9" color="#37474f" shadow="cast: true"></a-box>
+        <a-box position="-2.5 1.1 -2.6" width="0.45" height="2" depth="1.8" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="-2.5 1.8 -2.6" width="0.5" height="0.35" depth="1.85" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="2.4 0.05 -1" width="0.9" height="1.5" depth="0.35" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box position="2.4 0.85 -1" width="0.75" height="0.55" depth="0.08" color="#263238" shadow="cast: true"></a-box>
+        <a-cylinder position="1.8 0.9 2.2" height="1.7" radius="0.07" color="#eceff1" shadow="cast: true"></a-cylinder>
+        <a-cylinder position="1.65 1.7 2.2" radius="0.4" height="0.1" color="#fff59d" shadow="cast: true"></a-cylinder>
+        <a-box position="0 1.5 2.85" width="1.8" height="1.1" depth="0.06" color="#cfd8dc" shadow="cast: true"></a-box>
+        <a-box position="0 1.85 2.85" width="1.2" height="0.35" depth="0.06" color="#90a4ae" shadow="cast: true"></a-box>
+        <a-entity position="-1.5 0 2.3">
+          <a-cylinder height="0.4" radius="0.3" color="#795548" shadow="cast: true"></a-cylinder>
+          <a-entity position="0 0.55 0" geometry="primitive: sphere; radius: 0.45" material="color: #43a047" shadow="cast: true"></a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- ========== BEDROOM 1 ========== -->
+      <a-entity id="bedroom-1" position="0 0 -3.5">
+        <a-box position="0 0.35 1.5" width="1.8" height="0.25" depth="2.4" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box position="0 0.55 2.35" width="1.8" height="0.45" depth="0.35" color="#bcaaa4" shadow="cast: true"></a-box>
+        <a-box position="-1.1 0.45 1.5" width="0.45" height="0.35" depth="0.45" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="1.1 0.45 1.5" width="0.45" height="0.35" depth="0.45" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="-1.1 0.65 1.5" width="0.25" height="0.35" depth="0.25" color="#fff59d" shadow="cast: true"></a-box>
+        <a-box position="1.1 0.65 1.5" width="0.25" height="0.35" depth="0.25" color="#fff59d" shadow="cast: true"></a-box>
+        <a-box position="0 0.05 -2.4" width="2.6" height="1.9" depth="0.55" color="#6d4c41" shadow="cast: true"></a-box>
+        <a-box position="0 1.05 -2.4" width="2.4" height="0.35" depth="0.5" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="2.3 0.9 -0.5" width="0.45" height="1.5" depth="0.12" color="#cfd8dc" shadow="cast: true"></a-box>
+        <a-box position="2.35 1.35 -0.5" width="0.35" height="0.65" depth="0.06" color="#90a4ae" shadow="cast: true"></a-box>
+        <a-box position="-2.2 0.85 0" width="0.35" height="0.55" depth="0.9" color="#a1887f" shadow="cast: true"></a-box>
+        <a-entity position="0 2.4 -1" light="type: point; intensity: 0.35; distance: 6; color: #fce4ec"></a-entity>
+        <a-box position="1.8 1.3 2.7" width="0.9" height="0.65" depth="0.06" color="#78909c" shadow="cast: true"></a-box>
+      </a-entity>
+
+      <!-- ========== BEDROOM 2 ========== -->
+      <a-entity id="bedroom-2" position="6.5 0 -3.5">
+        <a-box position="0 0.38 -1.2" width="2" height="0.28" depth="2.2" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="0 0.52 -2.2" width="2" height="0.42" depth="0.35" color="#d7ccc8" shadow="cast: true"></a-box>
+        <a-box position="-0.95 0.42 -1.2" width="0.4" height="0.32" depth="0.4" color="#4e342e" shadow="cast: true"></a-box>
+        <a-box position="0.95 0.42 -1.2" width="0.4" height="0.32" depth="0.4" color="#4e342e" shadow="cast: true"></a-box>
+        <a-box position="0 0.05 2.3" width="2.4" height="1.85" depth="0.5" color="#795548" shadow="cast: true"></a-box>
+        <a-box position="0 1 2.3" width="2.2" height="0.35" depth="0.48" color="#5d4037" shadow="cast: true"></a-box>
+        <a-box position="-2.35 0.85 0.5" width="0.45" height="1.4" depth="0.55" color="#8d6e63" shadow="cast: true"></a-box>
+        <a-box position="-2.35 1.45 0.5" width="0.35" height="0.45" depth="0.45" color="#ffe0b2" shadow="cast: true"></a-box>
+        <a-cylinder position="2.1 0.85 1.8" height="1.6" radius="0.06" color="#eceff1" shadow="cast: true"></a-cylinder>
+        <a-cylinder position="1.95 1.65 1.8" radius="0.32" height="0.08" color="#fff9c4" shadow="cast: true"></a-cylinder>
+        <a-box position="1.8 1.35 -2.5" width="0.65" height="0.5" depth="0.06" color="#26a69a" shadow="cast: true"></a-box>
+        <a-entity position="0 2.35 1" light="type: point; intensity: 0.32; distance: 6; color: #e0f7fa"></a-entity>
+        <a-entity position="-1.2 0 2">
+          <a-cylinder height="0.38" radius="0.28" color="#6d4c41" shadow="cast: true"></a-cylinder>
+          <a-entity position="0 0.55 0" geometry="primitive: sphere; radius: 0.42" material="color: #66bb6a" shadow="cast: true"></a-entity>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- Camera & controls: optimized movement -->
+    <a-entity id="rig" position="0 1.6 14" rotation="0 180 0">
+      <a-camera look-controls="pointerLockEnabled: false" wasd-controls="acceleration: 35"
+        position="0 0 0"
+        raycaster="objects: [data-clickable]"></a-camera>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var host = document.getElementById('trees');
+      if (!host || !window.VillaScene) return;
+      host.querySelectorAll('[data-tree]').forEach(function (el) {
+        var t = el.getAttribute('data-tree');
+        var node = t === 'pine' ? VillaScene.createTreePine(1)
+          : t === 'round' ? VillaScene.createTreeRound(1)
+          : VillaScene.createTreePalm(1);
+        el.appendChild(node);
+      });
+    });
+  </script>
+</body>
+</html>
